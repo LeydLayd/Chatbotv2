@@ -2,7 +2,7 @@
 # archivo: chatbot.py
 # autor: robles garcia diego
 # descripcion: script con la aplicacion web del chatbot
-# version : 1.0
+# version : 1.1
 
 from datetime import datetime
 import pytz
@@ -97,8 +97,8 @@ def procesar_respuesta(respuesta) -> None:
             agregar_mensaje_bot(siguiente_pregunta["texto"])
 
 # ------------ CALLBACK PARA ENVIAR ------------ #
-def enviar_callback():
-    texto = st.session_state.input_text.strip()
+def enviar_callback(respuesta):
+    texto = respuesta
     if texto:
         agregar_mensaje_usuario(texto)
 
@@ -127,47 +127,21 @@ if not st.session_state.bot_iniciado:
     st.session_state.bot_iniciado = True
 
 # ------------ CONTENEDOR DE CHAT CON SCROLL AUTOMÁTICO ------------ #
-chat_html = """
-<div id='chat-container' 
-     style='
-       height:400px; 
-       overflow-y:auto; 
-       border:1px solid #ddd; 
-       padding:10px; 
-       background-color: #f0f8ff;   
-       color: #333333;              
-       border-radius: 8px;          
-     '>
-"""
-for message in st.session_state.messages:
-    if message["role"] == "bot":
-        chat_html += f"<p><b>🤖 Lina:</b> {message['content']}</p>"
-    else:
-        chat_html += f"<p><b>👤 Tú:</b> {message['content']}</p>"
-chat_html += "</div>"
+chat_container = st.container(height=500)
 
-scroll_script = """
-<script>
-var chatContainer = document.getElementById('chat-container');
-if(chatContainer){
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-</script>
-"""
+with chat_container:
+    for message in st.session_state.messages:
+        if message["role"] == "bot":
+            with st.chat_message("assistant", avatar="🤖"):
+                st.write(message["content"])
+        else:
+            with st.chat_message("user", avatar="👤"):
+                st.write(message["content"])
 
-components.html(chat_html + scroll_script, height=420)
 
-# ------------ ENTRADA DE TEXTO Y BOTÓN ------------ #
-col1, col2 = st.columns([5, 1])
-
-with col1:
-    st.text_input(
-        "Escribe aquí:",
-        key="input_text",
-        placeholder="Escribe tu respuesta...",
-        on_change=enviar_callback,
-        label_visibility="collapsed"
-    )
-
-with col2:
-    st.button("📤", on_click=enviar_callback)
+# ------------ ENTRADA DE TEXTO ------------ #
+container_txt = st.container(height=80,border=False)
+prompt = container_txt.chat_input()
+if prompt:
+    enviar_callback(respuesta=prompt)
+    st.rerun()

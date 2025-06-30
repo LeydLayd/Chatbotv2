@@ -105,7 +105,7 @@ def enviar_callback(respuesta):
         if not st.session_state.cuestionario_terminado:
             procesar_respuesta(texto)
         else:
-            if ["gracias","Gracias"] in texto.lower():
+            if "gracias" in texto.lower():
                 agregar_mensaje_bot("¡De nada! Fue un placer ayudarte. Que tengas un excelente día.")
 
         st.session_state.input_text = ""  

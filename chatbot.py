@@ -107,41 +107,80 @@ def enviar_callback(respuesta):
         else:
             if "gracias" in texto.lower():
                 agregar_mensaje_bot("¡De nada! Fue un placer ayudarte. Que tengas un excelente día.")
-
-        st.session_state.input_text = ""  
-
+                
+def recarga()->None:
+    st.rerun()
+                
 # ------------ PAGINA CONFIGURACION ------------ #
 st.set_page_config(page_title="Chatbot Lina", page_icon="🤖")
 init_session()
 
-st.title("Chatbot Lina 🤖")
+# ------------ Mensaje de confidencialidad ------------ #
+if not st.session_state.aviso_aceptado:
+    st.markdown("""
+        ### 🧬 Proyecto de Investigación - Aviso de Privacidad
 
-if not st.session_state.bot_iniciado:
-    agregar_mensaje_bot(f"Hola {saludo()}, mi nombre es Lina, soy tu asistente virtual.")
-    agregar_mensaje_bot("Te voy a realizar un cuestionario de rutina para generar tu expediente.")
+        Esta herramienta forma parte de un estudio de investigación académica.  
+        Todos los datos proporcionados serán utilizados exclusivamente con fines médicos y científicos,  
+        y serán tratados bajo estricta confidencialidad y anonimato.
 
-    if st.session_state.preguntas:
-        primera_pregunta = st.session_state.preguntas[0]
-        agregar_mensaje_bot(primera_pregunta["texto"])
+        Tu participación en este cuestionario es completamente voluntaria y representa una valiosa contribución para esta investigación.  
+        Al continuar, aceptas formar parte del estudio de manera libre y consciente.  
+        **¡Gracias por tu apoyo!**
+        """)
 
-    st.session_state.bot_iniciado = True
+    if st.button("✅ Continuar"):
+        st.session_state.aviso_aceptado = True
+        st.rerun()
+    st.text("⬆️ Presione el boton para continuar")
 
-# ------------ CONTENEDOR DE CHAT CON SCROLL AUTOMÁTICO ------------ #
-chat_container = st.container(height=500)
+else:
+    st.title("Chatbot Lina 🤖")
 
-with chat_container:
-    for message in st.session_state.messages:
-        if message["role"] == "bot":
-            with st.chat_message("assistant", avatar="🤖"):
-                st.write(message["content"])
-        else:
-            with st.chat_message("user", avatar="👤"):
-                st.write(message["content"])
+    if not st.session_state.bot_iniciado:
+        agregar_mensaje_bot(f"Hola {saludo()}, mi nombre es Lina, soy tu asistente virtual.")
+        agregar_mensaje_bot("Te voy a realizar un cuestionario de rutina para generar tu expediente.")
 
+        if st.session_state.preguntas:
+            primera_pregunta = st.session_state.preguntas[0]
+            agregar_mensaje_bot(primera_pregunta["texto"])
 
-# ------------ ENTRADA DE TEXTO ------------ #
-container_txt = st.container(height=80,border=False)
-prompt = container_txt.chat_input()
-if prompt:
-    enviar_callback(respuesta=prompt)
-    st.rerun()
+        st.session_state.bot_iniciado = True
+
+    # ------------ CONTENEDOR DE CHAT ------------ #
+    chat_container = st.container(height=450)
+
+    with chat_container:
+        for message in st.session_state.messages:
+            if message["role"] == "bot":
+                with st.chat_message("assistant", avatar="🤖"):
+                    st.write(message["content"])
+            else:
+                with st.chat_message("user", avatar="👤"):
+                    st.write(message["content"])
+
+    # ------------ BOTÓN REGRESAR ------------ #
+    button_regresar = st.button("⏪ Regresar",type="primary")
+    if st.session_state.pregunta_actual > 0 and not st.session_state.cuestionario_terminado:
+        if button_regresar:
+            st.session_state.pregunta_actual -= 1
+            pregunta_anterior = st.session_state.preguntas[st.session_state.pregunta_actual]
+            clave_anterior = pregunta_anterior.get("clave", f"pregunta_{st.session_state.pregunta_actual}")
+            
+            # Elimina la respuesta anterior si existe
+            if clave_anterior in st.session_state.respuestas:
+                del st.session_state.respuestas[clave_anterior]
+            
+            # Mostrar de nuevo la pregunta anterior
+            agregar_mensaje_bot(f"(Editando respuesta anterior)")
+            agregar_mensaje_bot(pregunta_anterior["texto"])
+            recarga()
+            
+    st.write("¿Cometiste un error? Usa el botón **Regresar** para corregir.")        
+
+    # ------------ ENTRADA DE TEXTO ------------ #
+    container_txt = st.container(height=80,border=False)
+    prompt = container_txt.chat_input()
+    if prompt:
+        enviar_callback(respuesta=prompt)
+        recarga()

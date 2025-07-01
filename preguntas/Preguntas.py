@@ -9,8 +9,7 @@ preguntas_personales = [
     {"texto": "¿Cuál es tu edad?", "clave": "edad"},
     {"texto": "¿Cuál es tu sexo?", "clave": "sexo"},
     {"texto": "¿Cuál es tu fecha de nacimiento (dd/mm/aaaa)?", "clave": "fecha_nacimiento"},
-    {"texto": "¿Cuál es tu CURP?", "clave": "curp"},
-    {"texto": "¿Cuál es tu domicilio?", "clave": "domicilio"},
+    {"texto": "¿Cual es la ciudad/localidad y estado donde radica?", "clave": "domicilio"},
     {"texto": "¿Cuál es tu número de teléfono?", "clave": "telefono"},
     {"texto": "¿Cuál es tu ocupación?", "clave": "ocupacion"},
     {"texto": "¿Cuál es tu estado civil?", "clave": "estado_civil"},
@@ -59,8 +58,9 @@ fumar = [
         "texto": "¿Fumas actualmente?",
         "clave": "fuma",
         "condicional": {
-            "sí": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}],
-            "si": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}]
+            "si": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}],
+            "a veces": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}],
+            "aveces": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}]
         }
     }
 ]
@@ -70,8 +70,9 @@ alcohol = [
         "texto": "¿Consumes alcohol?",
         "clave": "alcohol",
         "condicional": {
-            "sí": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}],
-            "si": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}]
+            "si": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}],
+            "a veces": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}],
+            "aveces": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}]
         }
     }
 ]
@@ -85,7 +86,11 @@ actividad = [
                 {"texto": "¿Qué tipo?", "clave": "tipo_actividad"},
                 {"texto": "¿Cuántas veces por semana?", "clave": "frecuencia_actividad"}
             ],
-            "si": [
+            "a veces": [
+                {"texto": "¿Qué tipo?", "clave": "tipo_actividad"},
+                {"texto": "¿Cuántas veces por semana?", "clave": "frecuencia_actividad"}
+            ],
+            "aveces": [
                 {"texto": "¿Qué tipo?", "clave": "tipo_actividad"},
                 {"texto": "¿Cuántas veces por semana?", "clave": "frecuencia_actividad"}
             ]
@@ -98,11 +103,15 @@ glucosa = [
         "texto": "¿Se toma la glucosa en casa?",
         "clave": "glucosa_en_casa",
         "condicional": {
-            "sí": [
+            "si": [
                 {"texto": "¿Con qué frecuencia?", "clave": "frecuencia_glucosa"},
                 {"texto": "¿Cuál es su nivel promedio?", "clave": "promedio_glucosa"}
             ],
-            "si": [
+            "a veces": [
+                {"texto": "¿Con qué frecuencia?", "clave": "frecuencia_glucosa"},
+                {"texto": "¿Cuál es su nivel promedio?", "clave": "promedio_glucosa"}
+            ],
+            "aveces": [
                 {"texto": "¿Con qué frecuencia?", "clave": "frecuencia_glucosa"},
                 {"texto": "¿Cuál es su nivel promedio?", "clave": "promedio_glucosa"}
             ]
@@ -117,8 +126,6 @@ alimenticio = [
     {"texto": "¿Con qué frecuencia presenta micción frecuente?", "clave": "miccion_frecuente"},
     {"texto": "¿Con qué frecuencia presenta hambre excesiva?", "clave": "hambre_excesiva"},
     {"texto": "¿Con qué frecuencia presenta cansancio constante?", "clave": "cansancio_constante"},
-    {"texto": "¿Con qué frecuencia presenta visión borrosa?", "clave": "vision_borrosa"},
     {"texto": "¿Con qué frecuencia presenta pérdida de peso sin causa aparente?", "clave": "perdida_peso"},
     {"texto": "¿Con qué frecuencia presenta hormigueo en manos/pies?", "clave": "hormigueo"},
-    {"texto": "¿Con qué frecuencia presenta heridas que no cicatrizan?", "clave": "heridas_no_cicatrizan"},
 ]

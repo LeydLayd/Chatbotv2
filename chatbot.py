@@ -2,7 +2,7 @@
 # archivo: chatbot.py
 # autor: robles garcia diego
 # descripcion: script con la aplicacion web del chatbot
-# version : 1.1
+# version : 1.2
 
 from datetime import datetime
 import pytz
@@ -28,6 +28,9 @@ def saludo() -> str:
 def init_session() -> None:
     if "messages" not in st.session_state:
         st.session_state.messages = []
+        
+    if "aviso_aceptado" not in st.session_state:
+        st.session_state.aviso_aceptado = False
 
     if "respuestas" not in st.session_state:
         st.session_state.respuestas = {}

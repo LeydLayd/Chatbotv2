@@ -59,6 +59,7 @@ fumar = [
         "clave": "fuma",
         "condicional": {
             "si": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}],
+            "sí": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}],
             "a veces": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}],
             "aveces": [{"texto": "¿Cuántos cigarrillos al día?", "clave": "cigarrillos_dia"}]
         }
@@ -71,6 +72,7 @@ alcohol = [
         "clave": "alcohol",
         "condicional": {
             "si": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}],
+            "sí": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}],
             "a veces": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}],
             "aveces": [{"texto": "¿Con qué frecuencia?", "clave": "frecuencia_alcohol"}]
         }
@@ -83,6 +85,10 @@ actividad = [
         "clave": "actividad_fisica",
         "condicional": {
             "sí": [
+                {"texto": "¿Qué tipo?", "clave": "tipo_actividad"},
+                {"texto": "¿Cuántas veces por semana?", "clave": "frecuencia_actividad"}
+            ],
+            "si": [
                 {"texto": "¿Qué tipo?", "clave": "tipo_actividad"},
                 {"texto": "¿Cuántas veces por semana?", "clave": "frecuencia_actividad"}
             ],
@@ -103,6 +109,10 @@ glucosa = [
         "texto": "¿Se toma la glucosa en casa?",
         "clave": "glucosa_en_casa",
         "condicional": {
+            "sí": [
+                {"texto": "¿Con qué frecuencia?", "clave": "frecuencia_glucosa"},
+                {"texto": "¿Cuál es su nivel promedio?", "clave": "promedio_glucosa"}
+            ],
             "si": [
                 {"texto": "¿Con qué frecuencia?", "clave": "frecuencia_glucosa"},
                 {"texto": "¿Cuál es su nivel promedio?", "clave": "promedio_glucosa"}

@@ -262,9 +262,8 @@ init_session()
 # ------------ AVISO DE PRIVACIDAD ------------ #
 if not st.session_state.aviso_aceptado:
     st.markdown("""
-        ### 🧬 Proyecto de Investigación - Aviso de Privacidad
-
-        Esta herramienta forma parte de un estudio de investigación académica.  
+        ###Aviso de Privacidad
+  
         Todos los datos proporcionados serán utilizados exclusivamente con fines médicos y científicos,  
         y serán tratados bajo estricta confidencialidad y anonimato.
 
@@ -272,7 +271,7 @@ if not st.session_state.aviso_aceptado:
         - Generar resúmenes clínicos automáticos
         - Formular preguntas complementarias personalizadas
 
-        Tu participación en este cuestionario es completamente voluntaria y representa una valiosa contribución para esta investigación.  
+        Tu participación en este cuestionario es completamente voluntaria.  
         Al continuar, aceptas formar parte del estudio de manera libre y consciente.  
         **¡Gracias por tu apoyo!**
         """)
@@ -284,8 +283,8 @@ if not st.session_state.aviso_aceptado:
 
 # ------------ INTERFAZ DEL CHATBOT ------------ #
 else:
-    st.title("🤖 Chatbot Lina (v2.0 con IA)")
-    st.caption("💡 Potenciado por Gemini 1.5 Flash")
+    st.title("🤖 Chatbot Lina ")
+    st.caption("💡 Potenciado por Gemini 2.5 Flash")
 
     if not st.session_state.bot_iniciado:
         agregar_mensaje_bot(f"Hola {saludo()}, mi nombre es Lina, soy tu asistente virtual. 👋")

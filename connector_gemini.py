@@ -15,52 +15,36 @@ class GeminiConnector:
     """
     
     def __init__(self):
-        """
-        Inicializa el conector usando la API key desde st.secrets
-        """
         try:
-            # Obtener API key desde Streamlit secrets
             api_key = st.secrets["GEMINI_API_KEY"]
-            self.cliente = genai.Client(api_key=api_key)
-            
-            # Configurar el modelo
+            self.client = genai.Client(api_key=api_key)
             self.model = "gemini-2.5-flash"
-        
+            
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents="Hola Gemini"
+            )
+            print(response.text)
         except Exception as e:
             raise Exception(f"Error al inicializar Gemini: {e}")
-    
+
     def _llamar_con_reintentos(self, prompt: str, max_reintentos: int = 3) -> Optional[str]:
-        """
-        Realiza la llamada a la API con reintentos automáticos.
-        
-        Args:
-            prompt: El prompt a enviar
-            max_reintentos: Número máximo de intentos
-            
-        Returns:
-            Respuesta del modelo o None si falla
-        """
         for intento in range(max_reintentos):
             try:
-                response = self.cliente.models.generate_content(
-                            model=self.model,
-                            contents=prompt
-                        )
-                
-                # Verificar que hay respuesta válida
-                if response.text:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt
+                )
+                if hasattr(response, "text") and response.text:
                     return response.text.strip()
                 else:
                     print(f"Advertencia: Respuesta vacía en intento {intento + 1}")
-                    
             except Exception as e:
                 print(f"Error en intento {intento + 1}/{max_reintentos}: {e}")
-                
-                # Esperar antes de reintentar (backoff exponencial)
                 if intento < max_reintentos - 1:
                     time.sleep(2 ** intento)
-        
         return None
+
     
     def generar_resumen(self, historial: str) -> Optional[str]:
         """
@@ -85,7 +69,8 @@ class GeminiConnector:
 {historial}
 
 **RESUMEN CLÍNICO:**"""
-
+        print(prompt)
+        
         return self._llamar_con_reintentos(prompt)
     
     def generar_pregunta_complementaria(

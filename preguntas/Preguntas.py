@@ -138,7 +138,5 @@ alimenticio = [
     {"texto": "¿Con qué frecuencia presenta cansancio constante?", "clave": "cansancio_constante"},
     {"texto": "¿Con qué frecuencia presenta pérdida de peso sin causa aparente?", "clave": "perdida_peso"},
     {"texto": "¿Con qué frecuencia presenta hormigueo en manos/pies?", "clave": "hormigueo"},
-    {"texto": "¿Cual es la causa mas comun del consumo de alcohol?", "clave": "causa"},
-    {"texto": "¿Alguien de su familia tiene enfermedades por eso?", "clave": "enfermedad"},
     
 ]

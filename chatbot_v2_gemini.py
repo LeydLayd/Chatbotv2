@@ -262,7 +262,7 @@ init_session()
 # ------------ AVISO DE PRIVACIDAD ------------ #
 if not st.session_state.aviso_aceptado:
     st.markdown("""
-        ###Aviso de Privacidad
+        ### Aviso de Privacidad
   
         Todos los datos proporcionados serán utilizados exclusivamente con fines médicos y científicos,  
         y serán tratados bajo estricta confidencialidad y anonimato.

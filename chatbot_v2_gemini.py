@@ -1,17 +1,15 @@
-# chatbot Lina basado en reglas
-# archivo: chatbot.py
+# chatbot Lina basado en reglas + IA (Gemini)
+# archivo: chatbot_v2_gemini.py
 # autor: robles garcia diego
-# descripcion: script con la aplicacion web del chatbot
-# version : 1.0
+# descripcion: Chatbot médico con Gemini 1.5 Flash
+# version: 2.0
 
 from datetime import datetime
 import pytz
 import streamlit as st
-import streamlit.components.v1 as components
 import preguntas.Preguntas as prg
-from google_sheets_connector_1 import GoogleSheetsConnector
-from connector_mistral import GenerarResumen
-from connector_falcon import GenerarPregunta
+from google_sheets_connector import GoogleSheetsConnector
+from connector_gemini import GeminiConnector
 
 # ------------ FUNCIONES AUXILIARES ------------ #
 def saludo() -> str:
@@ -26,7 +24,7 @@ def saludo() -> str:
     else:
         return "Buenas noches"
 
-# ------------ INICIALIZACIÓN DE SESION ------------ #
+# ------------ INICIALIZACIÓN DE SESIÓN ------------ #
 def init_session() -> None:
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -59,7 +57,6 @@ def init_session() -> None:
         Preguntas_totales += prg.actividad
         Preguntas_totales += prg.glucosa
         Preguntas_totales += prg.alimenticio
-
         st.session_state.preguntas = Preguntas_totales
         
     if "complementarias_activas" not in st.session_state:
@@ -79,67 +76,97 @@ def init_session() -> None:
 
     if "resumen_texto" not in st.session_state:
         st.session_state.resumen_texto = ""
-
-
-#metrica rouges        
         
-# ------------ FUNCION para obtener el resumen ------------ #
-#cambiar hacia asyc      
-def resumen():
-    st.session_state.resumen_listo = False
-    conector = GenerarResumen(st.session_state.historial)
-    resultado = conector.obtener_resumen()  # puede tardar
-    st.session_state.resumen_texto = resultado
-    st.session_state.resumen_listo = True
-    #st.experimental_rerun()
+    # Inicializar conector de Gemini
+    if "gemini_connector" not in st.session_state:
+        try:
+            st.session_state.gemini_connector = GeminiConnector()
+        except Exception as e:
+            st.error(f"❌ Error al inicializar Gemini: {e}")
+            st.stop()
 
+# ------------ FUNCIÓN PARA GENERAR RESUMEN ------------ #
+def generar_resumen():
+    """Genera resumen clínico usando Gemini"""
+    if not st.session_state.historial:
+        return
+    
+    with st.spinner("🤖 Generando resumen clínico con IA..."):
+        try:
+            connector = st.session_state.gemini_connector
+            resumen = connector.generar_resumen(st.session_state.historial)
+            
+            if resumen:
+                st.session_state.resumen_texto = resumen
+                st.session_state.resumen_listo = True
+            else:
+                st.error("⚠️ No se pudo generar el resumen. Continuando sin él.")
+                st.session_state.resumen_texto = "Resumen no disponible"
+                st.session_state.resumen_listo = True
+                
+        except Exception as e:
+            st.error(f"❌ Error al generar resumen: {e}")
+            st.session_state.resumen_texto = "Error al generar resumen"
+            st.session_state.resumen_listo = True
 
-
-# ------------ FUNCIONE para guardar el historial ------------ #
+# ------------ FUNCIÓN PARA GUARDAR HISTORIAL ------------ #
 def historial(pregunta, respuesta):
+    """Guarda la conversación en el historial (excluyendo datos personales)"""
     campos_excluidos = {
-        "nombre_completo",
-        "fecha_nacimiento", 
-        "domicilio",
-        "telefono",
-        "contacto_emergencia"
+        "nombre_completo", "fecha_nacimiento", "domicilio",
+        "telefono", "contacto_emergencia"
     }
     
     clave = pregunta.get("clave", f"pregunta_{st.session_state.pregunta_actual}")
     
     if clave not in campos_excluidos:
-        st.session_state.historial += f"\nDoctor: {pregunta.get('texto', f'pregunta_{st.session_state.pregunta_actual}')}"
+        st.session_state.historial += f"\nDoctor: {pregunta.get('texto', '')}"
         st.session_state.historial += f"\nPaciente: {respuesta}"
-        
-# ------------ FUNCION PARA INICIAR VARIABLES COMPLEMENTARIAS ------------ #        
+
+# ------------ INICIAR PREGUNTAS COMPLEMENTARIAS ------------ #        
 def iniciar_preguntas_complementarias():
+    """Inicia el flujo de preguntas complementarias con IA"""
+    # Primero generar el resumen
+    generar_resumen()
+    
     st.session_state.complementarias_activas = True
     st.session_state.contador_complementarias = 0
     st.session_state.respuestas_complementarias = []
+    
+    # Generar primera pregunta complementaria
     generar_pregunta_complementaria()
-        
-# ------------ FUNCION PARA GENERAR PREGUNTAS COMPLEMENTARIAS ------------ #        
+
+# ------------ GENERAR PREGUNTA COMPLEMENTARIA ------------ #        
 def generar_pregunta_complementaria():
+    """Genera una pregunta complementaria usando Gemini"""
     if not st.session_state.resumen_listo:
-        agregar_mensaje_bot("⌛ Esperando a que se genere el resumen clínico antes de continuar...")
+        agregar_mensaje_bot("⌛ Esperando resumen clínico...")
         return
 
-    respuestas_totales = {
-        **st.session_state.respuestas,
-        **{f"extra_{i+1}": r for i, r in enumerate(st.session_state.respuestas_complementarias)}
-    }
-
-    temp = st.session_state.historial
-    contexto = temp.splitlines()[-6:]
-    
-
-    generador = GenerarPregunta(resumen=st.session_state.resumen_texto,ultimas_preguntas=contexto)
-    nueva_pregunta = generador.obtener_nueva_pregunta()
-    
-    st.session_state.pregunta_complementaria_actual = nueva_pregunta
-    agregar_mensaje_bot(nueva_pregunta)
-
-
+    with st.spinner("🤖 Generando pregunta complementaria..."):
+        try:
+            # Obtener contexto reciente
+            temp = st.session_state.historial
+            contexto = temp.splitlines()[-6:] if temp else []
+            
+            connector = st.session_state.gemini_connector
+            nueva_pregunta = connector.generar_pregunta_complementaria(
+                resumen=st.session_state.resumen_texto,
+                ultimas_preguntas=contexto,
+                numero_pregunta=st.session_state.contador_complementarias + 1
+            )
+            
+            if nueva_pregunta:
+                st.session_state.pregunta_complementaria_actual = nueva_pregunta
+                agregar_mensaje_bot(nueva_pregunta)
+            else:
+                # Si falla, terminar preguntas complementarias
+                st.session_state.complementarias_activas = False
+                agregar_mensaje_bot("He terminado con las preguntas complementarias.")
+                
+        except Exception as e:
+            st.error(f"❌ Error al generar pregunta: {e}")
+            st.session_state.complementarias_activas = False
 
 # ------------ FUNCIONES DE MENSAJES ------------ #
 def agregar_mensaje_bot(mensaje) -> None:
@@ -147,13 +174,6 @@ def agregar_mensaje_bot(mensaje) -> None:
 
 def agregar_mensaje_usuario(mensaje) -> None:
     st.session_state.messages.append({"role": "user", "content": mensaje})
-   
-#def actualizar_encabezados(sheet, claves):
-#    hoja = sheet.sheet
-#    encabezados_actuales = hoja.row_values(1)
-#    if set(claves) != set(encabezados_actuales):
-#        hoja.update('A1', [claves]) 
-#"""
 
 # ------------ PROCESAR RESPUESTA ------------ #
 def procesar_respuesta(respuesta) -> None:
@@ -161,14 +181,11 @@ def procesar_respuesta(respuesta) -> None:
         pregunta_actual = st.session_state.preguntas[st.session_state.pregunta_actual]
         clave = pregunta_actual.get("clave", f"pregunta_{st.session_state.pregunta_actual}")
         
-        #print(pregunta_actual)
-        #print(respuesta.strip().lower())
-        
-        historial(pregunta_actual,respuesta.strip().lower())
-
+        # Guardar en historial
+        historial(pregunta_actual, respuesta.strip().lower())
         st.session_state.respuestas[clave] = respuesta.strip().lower()
 
-        # Insertar preguntas condicionales si aplica
+        # Insertar preguntas condicionales
         if "condicional" in pregunta_actual:
             respuesta_key = respuesta.strip().lower()
             preguntas_extra = pregunta_actual["condicional"].get(respuesta_key)
@@ -179,22 +196,23 @@ def procesar_respuesta(respuesta) -> None:
                     + preguntas_extra
                     + st.session_state.preguntas[index:]
                 )
-        if clave == "hambre_excesiva":
-            ##resumen()
-            pass
 
         st.session_state.pregunta_actual += 1
 
+        # Verificar si terminó el cuestionario base
         if st.session_state.pregunta_actual >= len(st.session_state.preguntas):
             st.session_state.cuestionario_terminado = True
-            print(f"Respuestas recogidas:", st.session_state.respuestas)
-            agregar_mensaje_bot("¡Perfecto! He terminado de recopilar tu información basica, ahora apoyame contestando las siguientes preguntas para complementar mi informacion sobre ti.")
-            gsheets = GoogleSheetsConnector("credentials/credenciales.json", "Lina")
+            agregar_mensaje_bot("¡Perfecto! He terminado de recopilar tu información básica.")
+            agregar_mensaje_bot("Ahora te haré algunas preguntas complementarias para completar tu expediente. 🔍")
+            
+            # Guardar en Google Sheets
+            gsheets = GoogleSheetsConnector("Lina")
             try:
                 gsheets.guardar_fila(st.session_state.respuestas)
             except Exception as e:
                 st.error(f"❌ Error al guardar en Google Sheets: {e}")
 
+            # Iniciar preguntas complementarias
             iniciar_preguntas_complementarias()
         else:
             siguiente_pregunta = st.session_state.preguntas[st.session_state.pregunta_actual]
@@ -210,32 +228,38 @@ def enviar_callback(respuesta):
             procesar_respuesta(texto)
 
         elif st.session_state.complementarias_activas:
-            # Guardar en historial también
+            # Guardar respuesta complementaria
             pregunta = {"texto": st.session_state.pregunta_complementaria_actual}
             historial(pregunta, texto.strip().lower())
-            # Guardar respuesta y generar la siguiente
             st.session_state.respuestas_complementarias.append(texto.strip().lower())
             st.session_state.contador_complementarias += 1
 
+            # Verificar si ya completó las 5 preguntas
             if st.session_state.contador_complementarias < 5:
                 generar_pregunta_complementaria()
             else:
                 st.session_state.complementarias_activas = False
-                agregar_mensaje_bot("Gracias. He terminado también con las preguntas complementarias.")
-        
+                agregar_mensaje_bot("✅ ¡Excelente! He terminado de recopilar toda la información.")
+                agregar_mensaje_bot("Tu expediente completo ha sido guardado. Gracias por tu colaboración. 🙏")
         else:
             if "gracias" in texto.lower():
-                agregar_mensaje_bot("¡De nada! Fue un placer ayudarte. Que tengas un excelente día.")
+                agregar_mensaje_bot("¡De nada! Fue un placer ayudarte. Que tengas un excelente día. 😊")
 
-
-def recarga()->None:
+def recarga() -> None:
     st.rerun()
 
+# ============================================
+# CONFIGURACIÓN DE LA PÁGINA
+# ============================================
+st.set_page_config(
+    page_title="Chatbot Lina con IA",
+    page_icon="🤖",
+    layout="centered"
+)
 
-# ------------ PAGINA CONFIGURACION ------------ #
-st.set_page_config(page_title="Chatbot Lina", page_icon="🤖")
 init_session()
 
+# ------------ AVISO DE PRIVACIDAD ------------ #
 if not st.session_state.aviso_aceptado:
     st.markdown("""
         ### 🧬 Proyecto de Investigación - Aviso de Privacidad
@@ -244,26 +268,28 @@ if not st.session_state.aviso_aceptado:
         Todos los datos proporcionados serán utilizados exclusivamente con fines médicos y científicos,  
         y serán tratados bajo estricta confidencialidad y anonimato.
 
+        **🤖 Esta versión utiliza Inteligencia Artificial (Gemini 1.5 Flash) para:**
+        - Generar resúmenes clínicos automáticos
+        - Formular preguntas complementarias personalizadas
+
         Tu participación en este cuestionario es completamente voluntaria y representa una valiosa contribución para esta investigación.  
         Al continuar, aceptas formar parte del estudio de manera libre y consciente.  
         **¡Gracias por tu apoyo!**
         """)
 
-
-
     if st.button("✅ Continuar"):
         st.session_state.aviso_aceptado = True
         st.rerun()
-    st.text("⬆️ Presione el boton para continuar")
+    st.text("⬆️ Presiona el botón para continuar")
 
-# Si ya aceptó, mostrar el chatbot
+# ------------ INTERFAZ DEL CHATBOT ------------ #
 else:
-    st.title("Chatbot Lina 🤖")
-    st.write    ("Todos los datos seran usados con fines medicos")
+    st.title("🤖 Chatbot Lina (v2.0 con IA)")
+    st.caption("💡 Potenciado por Gemini 1.5 Flash")
 
     if not st.session_state.bot_iniciado:
-        agregar_mensaje_bot(f"Hola {saludo()}, mi nombre es Lina, soy tu asistente virtual.")
-        agregar_mensaje_bot("Te voy a realizar un cuestionario de rutina para generar tu expediente.")
+        agregar_mensaje_bot(f"Hola {saludo()}, mi nombre es Lina, soy tu asistente virtual. 👋")
+        agregar_mensaje_bot("Te voy a realizar un cuestionario de rutina para generar tu expediente médico.")
 
         if st.session_state.preguntas:
             primera_pregunta = st.session_state.preguntas[0]
@@ -282,32 +308,44 @@ else:
             else:
                 with st.chat_message("user", avatar="👤"):
                     st.write(message["content"])
-                    
-    # ------------ BOTÓN REGRESAR ------------ #
-    button_regresar = st.button("⏪ Regresar",type="primary")
+
+    # ------------ CONTROLES ------------ #
+    col1, col2 = st.columns([1, 4])
+    
+    with col1:
+        button_regresar = st.button("⏪ Regresar", type="primary")
+        
     if st.session_state.pregunta_actual > 0 and not st.session_state.cuestionario_terminado:
         if button_regresar:
             st.session_state.pregunta_actual -= 1
             pregunta_anterior = st.session_state.preguntas[st.session_state.pregunta_actual]
             clave_anterior = pregunta_anterior.get("clave", f"pregunta_{st.session_state.pregunta_actual}")
             
-            # Elimina la respuesta anterior si existe
             if clave_anterior in st.session_state.respuestas:
                 del st.session_state.respuestas[clave_anterior]
             
-            # Mostrar de nuevo la pregunta anterior
-            agregar_mensaje_bot(f"(Editando respuesta anterior)")
+            agregar_mensaje_bot("(Editando respuesta anterior)")
             agregar_mensaje_bot(pregunta_anterior["texto"])
             recarga()
-            
-    st.write("¿Cometiste un error? Usa el botón **Regresar** para corregir tu respuesta.")
+    
+    with col2:
+        st.caption("¿Cometiste un error? Usa el botón **Regresar** para corregir.")
+
     # ------------ ENTRADA DE TEXTO ------------ #
-    container_txt = st.container(height=80,border=False)
-    prompt = container_txt.chat_input()
+    container_txt = st.container(height=80, border=False)
+    prompt = container_txt.chat_input("Escribe tu respuesta aquí...")
+    
     if prompt:
         enviar_callback(respuesta=prompt)
         recarga()
 
-
-   
-
+    # ------------ INDICADORES DE ESTADO ------------ #
+    if st.session_state.cuestionario_terminado:
+        st.sidebar.success("✅ Cuestionario base completado")
+        
+        if st.session_state.resumen_listo:
+            with st.sidebar.expander("📄 Ver Resumen Clínico"):
+                st.write(st.session_state.resumen_texto)
+        
+        if st.session_state.complementarias_activas:
+            st.sidebar.info(f"🔍 Pregunta complementaria {st.session_state.contador_complementarias + 1}/5")

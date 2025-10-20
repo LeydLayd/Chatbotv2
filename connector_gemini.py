@@ -1,9 +1,9 @@
 # archivo: connector_gemini.py
 # autor: robles garcia diego
-# descripcion: Conector unificado para Gemini 1.5 Flash
+# descripcion: Conector unificado para Gemini 2.5 Flash
 # version: 2.0
 
-import google.generativeai as genai
+from google import genai
 from typing import Optional
 import streamlit as st
 import time
@@ -21,19 +21,11 @@ class GeminiConnector:
         try:
             # Obtener API key desde Streamlit secrets
             api_key = st.secrets["GEMINI_API_KEY"]
-            genai.configure(api_key=api_key)
+            self.cliente = genai.Client(api_key=api_key)
             
             # Configurar el modelo
-            self.model = genai.GenerativeModel(
-                model_name='gemini-1.5-flash',
-                generation_config={
-                    'temperature': 0.7,  # Balance entre creatividad y precisión
-                    'top_p': 0.95,
-                    'top_k': 40,
-                    'max_output_tokens': 500,  # Suficiente para resúmenes y preguntas
-                }
-            )
-            
+            self.model = "gemini-2.5-flash"
+        
         except Exception as e:
             raise Exception(f"Error al inicializar Gemini: {e}")
     
@@ -50,7 +42,10 @@ class GeminiConnector:
         """
         for intento in range(max_reintentos):
             try:
-                response = self.model.generate_content(prompt)
+                response = self.cliente.models.generate_content(
+                            model=self.model,
+                            contents=prompt
+                        )
                 
                 # Verificar que hay respuesta válida
                 if response.text:
